@@ -2,7 +2,7 @@
 
 This document contains the standard rules for turning design mockups in the
 `design_website/` folder into HTML pages in the `web_alpha/` root, based on
-the process and corrections that happened while building `index.html` (from
+the process and corrections that happened while building `home.html` (from
 `design_website/1. home.png`). Follow these rules for every new page
 (`design_website/2.png`, `3.png`, etc.) so results stay consistent and don't
 need repeated revisions.
@@ -13,12 +13,69 @@ need repeated revisions.
    a glance. Crop & zoom each part (using Python/PIL) when small details
    aren't clear from one full screenshot. Don't guess — measure.
 2. **Measure, don't estimate**, for anything that affects visual accuracy:
-   - Font size: check the cap-height of capital letters via pixel sampling,
-     then convert to px (cap-height ≈ 0.7 × font-size). Do this for
-     **both headings (h1/h2) AND body paragraphs** — don't measure only the
-     heading and assume the paragraph is automatically proportional.
+   - Font size: the cap-height-via-pixel-sampling method
+     (cap-height ≈ 0.7 × font-size) is only a **first guess**, not a final
+     answer. Against a busy/photographic background it is unreliable —
+     automated brightness-threshold scans pick up stray highlights (sun
+     glints, bright jade, gold trim) alongside the actual letter strokes,
+     and silently return a wrong bounding box. It has produced sizes that
+     were both too small (`home.html`'s first hero pass) and too big
+     (`about.html`'s first hero pass) for the *same* formula on different
+     mockups — don't trust it alone.
+     **Always confirm with a direct visual comparison**, which is the
+     reliable method, before calling a size final:
+     1. Screenshot the built page in the browser at a known width (e.g.
+        1440px).
+     2. Scale the mockup image to that same width:
+        `mockup.resize((int(mockup.width * scale), int(mockup.height * scale)))`
+        where `scale = screenshot_width / mockup.width`.
+     3. Crop the same region from both (e.g. the hero heading block) and
+        stack them into one image, mockup on top, rendered screenshot below.
+     4. Look at the stacked image yourself — does the text start/end at
+        matching x-positions, relative to the frame edges? This "distance
+        from text to frame" comparison is more robust than reading a cap-
+        height number, because it isn't fooled by a busy background the
+        way a brightness-threshold scan is.
+     Do this for **both headings (h1/h2) AND body paragraphs** — don't
+     measure only the heading and assume the paragraph is automatically
+     proportional.
+   - **Not every heading on a page is the same "tier," even at the same
+     HTML level.** A `<h2>` that sits beside an image in a 2-column grid
+     section and a `<h2>` that stands alone as a full-width centered
+     statement (no image, often on a bold/solid color background) can
+     differ enormously in size — on `about.html`, the grid-section
+     headings measured ~36px while the standalone statement headings
+     ("More Than a Gem", "Discover Your Jadeite Legacy") measured close to
+     **hero size** (~96px). Don't assume a shared `h2` class is correct
+     for every heading just because they're nominally the same heading
+     level — measure each one's cap-height/frame-distance on its own, and
+     look at its *role* in the layout (does it have an image competing for
+     space, or does it own the full width?).
+     **This turned out to be a page-wide pattern, not a one-off** — on the
+     first pass, *every* category of "doesn't look like a hero, so it must
+     be small" heading was undersized:
+     - A full-width text-only section with no image at all (`about.html`'s
+       "A Legacy / Shaped by Hand", `home.html`'s "The Wisdom of Empires")
+       — same statement-size tier as the colored statement sections above,
+       not the small grid tier, even though it sits on a plain white
+       background with no special color cue.
+     - A heading overlaid on an inset/framed photo (`home.html`'s "An
+       Imperial Legacy Beyond Time", `about.html`'s "Born of Nature") — also
+       needed roughly double the size first used (small grid h2 → a size
+       closer to, though usually still under, the hero).
+     - Card-grid titles (`<h3>` on the 3-card grid) — also undersized at a
+       plain `text-2xl`/`text-3xl`; needed a noticeably larger scale to
+       match the mockup.
+     **The lesson: treat "is this heading small?" as a question to measure
+     for every single heading on the page, not just the ones that visually
+     announce themselves as a big statement.** When a user reports text
+     "too small" in one place, don't fix only that spot — re-check every
+     heading category on the page before calling it done, since the same
+     mis-sizing habit (defaulting to the small grid-h2 class whenever a
+     heading isn't an `<h1>`) tends to repeat across every section that
+     isn't an obvious hero.
    - **Every new page = measure from scratch again.** Do NOT assume a font
-     scale/Tailwind class from a previous page (e.g. `index.html`)
+     scale/Tailwind class from a previous page (e.g. `home.html`)
      automatically applies to a new page, even if it uses the same color
      tokens and font family. Canvas width, content density, and typographic
      scale can differ between mockups — about.png turned out to use body
@@ -72,13 +129,42 @@ need repeated revisions.
   `IntersectionObserver`).
 - **Site-wide navbar**: every page includes
   `<script src="js/navbar.js"></script>` right before `</body>`. This one
-  shared script injects a fixed, transparent-background navbar (hamburger
-  button on the left + `img/icon.png` logo) and a left-side slide-in menu
-  linking to all pages, so the nav only needs to be maintained in one file
-  (`js/navbar.js`). When adding a new page, add that same script tag and
-  add the new page to the `NAV_LINKS` array inside `js/navbar.js`.
+  shared script injects a fixed navbar (hamburger + "MENU" label, centered
+  logo, diamond + search icons) and a left-side slide-in menu linking to all
+  pages, so the nav only needs to be maintained in one file (`js/navbar.js`).
+  When adding a new page, add that same script tag and add the new page to
+  the `NAV_LINKS` array inside `js/navbar.js`.
+  - **Adaptive nav color (mandatory on every section):** the nav switches
+    between light (white) and dark (ink) icon/text color depending on
+    whether a light or dark section currently sits behind it. This only
+    works if **every** `<section>`/`<footer>` on the page has a
+    `data-nav-theme="light"` (over a dark/photo background) or
+    `data-nav-theme="dark"` (over a white/light background) attribute. If a
+    section is missing this attribute, the nav keeps the previous section's
+    color and can become unreadable (e.g. white text on a white background)
+    — treat this as a correctness bug, not a cosmetic detail, and grep for
+    `<section` / `<footer` at the end to confirm none were skipped.
+- **Site-wide footer**: every page includes `<script src="js/footer.js"></script>`
+  right before `</body>`, **placed before** the `<script src="js/navbar.js"></script>`
+  tag (and before the page's own `IntersectionObserver` script). This one
+  shared script injects the dark footer (logo, site nav links, copyright),
+  so — like the navbar — it only needs to be maintained in one file
+  (`js/footer.js`) instead of being pasted into every page. Do not write a
+  `<footer>...</footer>` block directly into a page's HTML.
+  - **Why the script order matters**: `footer.js` inserts the footer at its
+    own `<script>` tag's position using `document.currentScript`, which
+    runs synchronously as soon as the browser reaches that tag — before
+    `navbar.js` runs its adaptive-color scan. If `footer.js` is placed
+    *after* `navbar.js`, the footer won't exist in the DOM yet when the nav
+    looks for `[data-nav-theme]` sections, and the nav's color will stop
+    updating once the user scrolls into the footer.
+  - When adding a new page, add the same two script tags (`footer.js` then
+    `navbar.js`) and add the new page to the `NAV_LINKS` array in **both**
+    `js/navbar.js` (the slide-in menu) and `js/footer.js` (the footer's
+    site nav) — they are two independent lists kept in sync by hand, not
+    one shared source, so a new page must be added to both.
 - One page = one HTML file (`pagename.html`) in the **root of `web_alpha/`**
-  (alongside `index.html`), not inside `design_website/`.
+  (alongside `home.html`, the site's home page), not inside `design_website/`.
   `design_website/` is exclusively for mockup files (`1. home.png`,
   `2.png`, etc.) and this rules document — it is not an output folder.
 - Final real images (not mockups) are pulled from `img/home_img/` (or a
@@ -86,35 +172,57 @@ need repeated revisions.
   with the relative path `img/<folder-name>/file-name.png` since the HTML
   lives in the `web_alpha/` root.
 
-## 3. Design system (reused across all pages)
+## 3. Design system (reused across all pages *of the current redesign*)
+
+⚠️ **These tokens belong to the redesign iteration that produced
+`home.html` from `design_website/1. home.png`.** They are NOT permanently
+fixed — if a future batch of mockups (a new redesign pass) uses a different
+palette, re-sample it per the Section 1 color rule and update this table
+rather than assuming it still applies. This already happened once: the
+table below replaced an earlier palette (`cream #F5F1EA`, `header #826B59`,
+`gold #D9C6A3`, `maroon #7A1512`) that belonged to the pre-redesign site.
 
 ### Colors (define in `tailwind.config` on every page)
 
 | Token | Hex | Used for |
 |---|---|---|
-| `cream` | `#F5F1EA` | Light section backgrounds |
-| `ink` | `#1A1612` | Dark overlay backgrounds, body text |
-| `gold` | `#D9C6A3` | Small labels, button borders, dots, dividers — on DARK backgrounds |
-| `header` | `#826B59` | Italic heading text (h1/h2) — used on both light AND dark backgrounds; safer contrast than `gold` on cream |
-| `maroon` | `#7A1512` | Underline-style CTA links ("DISCOVER ...") |
+| `ink` | `#1A1612` | Dark/photo section backgrounds, footer background, primary body text on white sections |
+| `gold` | `#B98E58` | Italic accent heading text on DARK/photo backgrounds, card button borders & labels |
+| `maroon` | `#9C0512` | Italic accent heading text on WHITE/light backgrounds |
+| `parchment` | `#F0E5D4` | Heading/body text and filled buttons on DARK/photo backgrounds |
 
-⚠️ **Don't use `gold` for heading text on a cream background** — the
-contrast is too low (nearly unreadable). For headings, always use `header`.
-`gold` is still safe for small labels, divider lines, and dots since those
-are small/decorative, not primary text that needs to stay legible.
+Light section backgrounds are plain white (`#FFFFFF` / Tailwind `bg-white`)
+in this iteration, not a cream tint — confirm this is still true before
+reusing it on a new mockup.
+
+⚠️ **The italic accent color depends on what's behind it, not on being a
+fixed token**: `gold` on dark/photo backgrounds, `maroon` on white
+backgrounds. Sample both from the actual mockup — don't assume one color
+works everywhere just because the role (italic accent word) is the same.
 
 ### Typography
 
-- Main hero heading (h1): `text-6xl sm:text-7xl md:text-8xl`,
-  `leading-[1.05]`, 3 lines if the image actually shows 3 lines.
-- Regular section heading (h2): `text-4xl sm:text-5xl md:text-6xl`.
-- Dark slide heading (full-bleed feature slide): `text-5xl sm:text-6xl`.
+- Main hero heading (h1): `text-4xl sm:text-5xl md:text-6xl lg:text-7xl
+  xl:text-8xl`, `leading-[1.05]` — but **always re-measure per page** (see
+  section 1); the previous iteration measured larger (`text-6xl …
+  md:text-8xl`) on a different mockup set.
+- Regular section heading (h2), *grid section with an image*: `text-2xl
+  sm:text-3xl lg:text-4xl` in this iteration — re-measure per page, don't
+  assume this scale.
+- **Standalone statement heading (h2), full-width/centered, no image**
+  (e.g. a solid-color pull-quote section like `about.html`'s "More Than a
+  Gem"): sized close to the **hero h1**, not the grid h2 — in this
+  iteration `text-4xl sm:text-5xl md:text-6xl lg:text-8xl`. See the
+  heading-tier note in Section 1: measure this separately, it is not the
+  same size as a grid-section h2 just because both are `<h2>` tags.
 - Body paragraph: `text-base font-light leading-relaxed text-ink/80` as a
   starting point — **but always re-measure per page** (see section 1); it
   may need to go up to `text-lg`/`text-xl` depending on the reference.
 - Small capital label: class `.label` (letter-spacing: 0.25em), `text-xs`
   or `text-[10px]`.
-- The accent word/line in a heading is always `italic text-header`.
+- The accent word/line in a heading is `italic text-gold` on dark/photo
+  backgrounds, `italic text-maroon` on white backgrounds (see color note
+  above).
 
 ### Recurring components
 
@@ -132,10 +240,54 @@ are small/decorative, not primary text that needs to stay legible.
   icon + plain text label beside it" style, others use a "full pill
   containing text + arrow" style. Replicate exactly what each section's
   image shows.
+- **Multi-image slot (carousel) dots + prev/next arrows**: when a slot has
+  more than one real photo for the same spot (see the `N-slot-variant.jpg`
+  naming note in Section 4), pair it with small dot indicators and
+  circular prev/next arrow buttons. Use a frosted-glass style for the
+  arrow buttons — `rounded-full border border-white/50 bg-white/30
+  backdrop-blur-md text-ink` with a thin chevron (`stroke-width="1.5"`) —
+  not a solid opaque fill, so the button stays legible over any of the
+  slot's photos regardless of how bright or dark each one is. Wire the
+  dots and arrows to the same `goToSlide(index)` function so they always
+  stay in sync.
+- **Section divider (thin black shadow between sections)**: add a
+  `.section-divider` class to every top-level `<section>` and `<footer>`
+  (defined once in the page's `<style>` block):
+  ```css
+  .section-divider {
+    box-shadow: inset 0 -6px 8px -6px rgba(0, 0, 0, 0.35);
+  }
+  ```
+  Use **`inset`**, not a regular drop-shadow — adjacent sections sit flush
+  against each other with no gap, so in normal DOM/paint order the next
+  section's own background immediately overlaps (and hides) anything a
+  plain `box-shadow` casts outside the previous section's box. An `inset`
+  shadow is painted *inside* the section's own box, so it always stays
+  visible regardless of sibling paint order, with no `z-index` tricks
+  needed. Apply it on every section/footer, including full-bleed photo
+  heroes, so the thin line reads consistently as a page-wide divider.
 
 ## 4. Image rules (the most common source of mistakes — read carefully)
 
-1. **Check the file's actual dimensions first**, before deciding the
+1. **Check whether real photos already exist before building any
+   placeholder.** This project's photography sometimes arrives in
+   `img/<page>_img/` *before* the HTML is built — don't assume the folder
+   only has old/unrelated photos. List the folder, open each file, and
+   visually compare it against the matching crop of the mockup before
+   deciding a slot needs a gray placeholder. Getting this wrong (building
+   placeholders for a page that already had real photos sitting in its
+   folder) is exactly the kind of mistake this section exists to prevent.
+   - **Naming pattern observed in this project**: `<page#>-<slot#>.jpg`
+     per image slot (e.g. `1-3.jpg` = page 1's third photo slot), and
+     `<page#>-<slot#>-<variant#>.jpg` (e.g. `1-5-1.jpg`, `1-5-2.jpg`,
+     `1-5-3.jpg`) when one slot has multiple photos — almost always a
+     carousel (see the Recurring Components note in Section 3). Check for
+     this `-variant` suffix pattern before assuming a slot is single-image.
+   - **If a file looks mismatched or off-brand** (wrong subject, wrong
+     style, doesn't fit the page's theme) **flag it to the user and ask**
+     instead of silently dropping it or silently including it — it may be
+     intentional, or it may be a stray/misplaced asset.
+2. **Check the file's actual dimensions first**, before deciding the
    container size:
    ```python
    from PIL import Image
@@ -149,12 +301,12 @@ are small/decorative, not primary text that needs to stay legible.
    whole batch of files at once before writing any `<img>` tags, and grep
    `<img` in the finished file afterward to confirm every single one has an
    `aspect-*` class that matches what you checked.
-2. **Set the container's `aspect-ratio` to EXACTLY MATCH the image's native
+3. **Set the container's `aspect-ratio` to EXACTLY MATCH the image's native
    ratio** (using `aspect-square`, `aspect-[W/H]`, etc.). If the container
    ratio ≠ the image's native ratio, `object-cover` will crop the image and
    `object-contain` will leave empty space (letterbox/pillarbox) — both are
    problems if unintentional.
-3. Default rule: **the frame follows the image, not the other way around.**
+4. Default rule: **the frame follows the image, not the other way around.**
    Only use `object-cover` (with cropping tolerance) for:
    - Full-bleed backgrounds (hero & dark feature slides) that genuinely need
      to fill 100vh/100vw.
@@ -162,21 +314,28 @@ are small/decorative, not primary text that needs to stay legible.
    Otherwise, match the `aspect-ratio` to the real image first, then use
    `object-cover` (which then crops nothing, since the ratios already
    match).
-4. **Side-by-side image + text section** (not hero/full-bleed): don't wrap
-   it in a `max-w-6xl mx-auto` container with large symmetric padding —
-   that creates large empty space on wide screens. The correct pattern
-   (measured from the reference images):
-   - Image side: bleeds to the screen edge (gutter ±0–4%).
-   - Text side: a small gutter (±6–8%) only on its outer edge, not both
-     sides.
-   - Section uses a full-width `grid grid-cols-2`, NOT a flex layout inside
-     a centered container.
-5. **Section with min-h-screen + grid**: give the grid `items-center`
+5. **Side-by-side image + text section** (not hero/full-bleed): **measure
+   whether the image bleeds to the screen edge or sits in a padded/gutter
+   container — don't assume either pattern carries over from a previous
+   page.** Both have shown up across this project's mockups:
+   - *Edge-bleed pattern* (seen on the pre-redesign site): image side
+     bleeds to the screen edge (gutter ±0–4%), text side has a small
+     gutter (±6–8%) only on its outer edge, not both sides.
+   - *Contained/padded pattern* (seen on `home.html`'s redesign mockup):
+     both the image and text columns sit inside one shared padded
+     container (e.g. `px-6 md:px-14 lg:px-20`) with a visible gutter on
+     both outer edges and a generous gap between columns — the image does
+     **not** touch the screen edge.
+   Either way, avoid a narrow `max-w-6xl mx-auto` with large symmetric
+   padding (that creates oversized empty space on wide screens), and use a
+   full-width `grid grid-cols-1 md:grid-cols-2`, NOT a flex layout inside a
+   centered container.
+6. **Section with min-h-screen + grid**: give the grid `items-center`
    (instead of the default `stretch`), so the image column isn't forced to
    fill the section's entire height. If the image column + caption beneath
    it ends up crammed against the next section, add `py-*` to its wrapper
    div.
-6. **No real image yet?** Use a plain gray placeholder (no diagonal stripe
+7. **No real image yet?** Use a plain gray placeholder (no diagonal stripe
    pattern), with a small label naming the slot so it's easy to swap later:
    ```html
    <div class="flex items-center justify-center border border-dashed
@@ -186,7 +345,7 @@ are small/decorative, not primary text that needs to stay legible.
    ```
    For a slot on a dark background, use the dark variant
    (`bg-[#8A8A8A]`, white text).
-7. **Make sure the image folder is accessible to Apache.** If images don't
+8. **Make sure the image folder is accessible to Apache.** If images don't
    show up even though the path is correct, check the folder permissions:
    ```bash
    chmod 755 image_folder && chmod 644 image_folder/*.png
@@ -219,7 +378,12 @@ are small/decorative, not primary text that needs to stay legible.
 - [ ] All colors have been sampled from the real image, not guessed.
 - [ ] Font sizes — headings AND paragraphs — have been measured
       (cap-height) from this page's own reference image, not inherited from
-      another page.
+      another page, **and confirmed with the scaled-overlay visual
+      comparison** from Section 1 (not the cap-height formula alone).
+- [ ] Every heading has been checked against its actual role in the layout
+      (grid heading beside an image vs. standalone full-width statement
+      heading) rather than assumed to share a size with other headings at
+      the same HTML level — see the heading-tier note in Section 1/3.
 - [ ] Ran `grep -n "text-4xl\|<h1\|<h2\|<h3"` (or similar) over the finished
       file and confirmed every heading has the full responsive scale
       (`sm:`/`md:` steps) — none left on a bare, un-upgraded size. Same check
@@ -236,8 +400,22 @@ are small/decorative, not primary text that needs to stay legible.
       that isn't present in the reference.
 - [ ] It's been opened and scrolled through fully in the browser (Claude in
       Chrome), not just read from the code.
-- [ ] Dark and light sections have had their text contrast checked (gold on
-      cream = a problem, see the rule in section 3).
+- [ ] Dark and light sections have had their text contrast checked — the
+      italic accent color matches what's behind it (`gold` on dark/photo,
+      `maroon` on white), see the rule in section 3.
+- [ ] Every `<section>`/`<footer>` has a `data-nav-theme="light"` or
+      `"dark"` attribute (see section 2) so the fixed nav never goes
+      unreadable against the background behind it.
+- [ ] Every `<section>`/`<footer>` has the `.section-divider` class (see
+      section 3) so the thin black shadow divider is consistent page-wide.
+- [ ] The page has no hand-written `<footer>...</footer>` block — it loads
+      `js/footer.js` instead, with that script tag placed *before*
+      `js/navbar.js` (see section 2), and the new page has been added to
+      the `NAV_LINKS` array in both `js/footer.js` and `js/navbar.js`.
+- [ ] `img/<page>_img/` was checked for existing real photos (including any
+      `-variant` filenames for multi-image/carousel slots) before any
+      placeholder was built, and any mismatched/off-brand file was flagged
+      to the user instead of silently kept or dropped.
 - [ ] CTA links/buttons have been checked so their underline/border width
       doesn't extend past the text (needs `w-fit self-start` when inside a
       flex-col).
@@ -245,8 +423,10 @@ are small/decorative, not primary text that needs to stay legible.
 ## 7. Naming conventions
 
 - Output HTML file: a short, descriptive name matching the page's content
-  (e.g. `index.html` for home, `about.html`, `collection.html`, etc.) — not
+  (e.g. `home.html` for home, `about.html`, `collection.html`, etc.) — not
   based on the raw image filename (`2.png` → determine the page name from
-  its content, not "2.html").
+  its content, not "2.html"). `home.html` is this site's home page (not
+  `index.html`) — keep `js/navbar.js`'s `NAV_LINKS` and every page's own
+  "Home" links pointed at `home.html`.
 - Final real images: store them in `img/<page-name>_img/` following the
   existing `img/home_img/` pattern, with `755`/`644` permissions.
