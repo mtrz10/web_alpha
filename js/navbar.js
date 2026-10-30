@@ -1,6 +1,6 @@
 (function () {
   var NAV_LINKS = [
-    { href: 'home.html', label: 'Home' },
+    { href: 'index.html', label: 'Home' },
     { href: 'about.html', label: 'About' },
     { href: 'workwithus.html', label: 'Work With Us' },
     { href: 'bazi_con.html', label: 'Imperial BaZi Consultation' },
@@ -41,7 +41,7 @@
           '</svg>' +
           '<span class="label text-xs tracking-[0.25em]">MENU</span>' +
         '</button>' +
-        '<a href="home.html" aria-label="Anggara Treasures — Home" ' +
+        '<a href="index.html" aria-label="Anggara Treasures — Home" ' +
           'class="absolute left-1/2 top-1/2 block h-9 w-9 -translate-x-1/2 -translate-y-1/2 text-current">' +
           LOGO_SVG +
         '</a>' +
@@ -110,7 +110,7 @@
       a.addEventListener('click', closeMenu);
     });
 
-    var current = (location.pathname.split('/').pop() || 'home.html');
+    var current = (location.pathname.split('/').pop() || 'index.html');
     panel.querySelectorAll('a[data-nav-link]').forEach(function (a) {
       if (a.getAttribute('data-nav-link') === current) {
         a.classList.add('text-gold');

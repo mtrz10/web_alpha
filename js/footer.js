@@ -1,6 +1,6 @@
 (function () {
   var NAV_LINKS = [
-    { href: 'home.html', label: 'HOME' },
+    { href: 'index.html', label: 'HOME' },
     { href: 'about.html', label: 'ABOUT' },
     { href: 'workwithus.html', label: 'WORK WITH US' },
     { href: 'bazi_con.html', label: 'IMPERIAL BAZI CONSULTATION' },
@@ -19,7 +19,7 @@
   var footerHTML =
     '<footer data-nav-theme="light" class="section-divider w-full bg-ink px-6 py-10 md:px-14 lg:px-16">' +
       '<div class="flex flex-col items-center gap-6 text-center md:flex-row md:items-center md:justify-between md:text-left">' +
-        '<a href="home.html" class="flex items-center gap-3">' +
+        '<a href="index.html" class="flex items-center gap-3">' +
           '<svg viewBox="0 0 64 64" fill="none" class="h-8 w-8 text-white">' +
             '<circle cx="32" cy="32" r="29" stroke="currentColor" stroke-width="1.5" />' +
             '<circle cx="32" cy="32" r="24.5" stroke="currentColor" stroke-width="1.5" />' +

@@ -2,8 +2,8 @@
 
 This document contains the standard rules for turning design mockups in the
 `design_website/` folder into HTML pages in the `web_alpha/` root, based on
-the process and corrections that happened while building `home.html` (from
-`design_website/1. home.png`). Follow these rules for every new page
+the process and corrections that happened while building the home page
+(`index.html`, from `design_website/1. home.png`). Follow these rules for every new page
 (`design_website/2.png`, `3.png`, etc.) so results stay consistent and don't
 need repeated revisions.
 
@@ -19,7 +19,7 @@ need repeated revisions.
      automated brightness-threshold scans pick up stray highlights (sun
      glints, bright jade, gold trim) alongside the actual letter strokes,
      and silently return a wrong bounding box. It has produced sizes that
-     were both too small (`home.html`'s first hero pass) and too big
+     were both too small (`index.html`'s first hero pass) and too big
      (`about.html`'s first hero pass) for the *same* formula on different
      mockups — don't trust it alone.
      **Always confirm with a direct visual comparison**, which is the
@@ -55,11 +55,11 @@ need repeated revisions.
      first pass, *every* category of "doesn't look like a hero, so it must
      be small" heading was undersized:
      - A full-width text-only section with no image at all (`about.html`'s
-       "A Legacy / Shaped by Hand", `home.html`'s "The Wisdom of Empires")
+       "A Legacy / Shaped by Hand", `index.html`'s "The Wisdom of Empires")
        — same statement-size tier as the colored statement sections above,
        not the small grid tier, even though it sits on a plain white
        background with no special color cue.
-     - A heading overlaid on an inset/framed photo (`home.html`'s "An
+     - A heading overlaid on an inset/framed photo (`index.html`'s "An
        Imperial Legacy Beyond Time", `about.html`'s "Born of Nature") — also
        needed roughly double the size first used (small grid h2 → a size
        closer to, though usually still under, the hero).
@@ -75,7 +75,7 @@ need repeated revisions.
      heading isn't an `<h1>`) tends to repeat across every section that
      isn't an obvious hero.
    - **Every new page = measure from scratch again.** Do NOT assume a font
-     scale/Tailwind class from a previous page (e.g. `home.html`)
+     scale/Tailwind class from a previous page (e.g. `index.html`)
      automatically applies to a new page, even if it uses the same color
      tokens and font family. Canvas width, content density, and typographic
      scale can differ between mockups — about.png turned out to use body
@@ -164,7 +164,9 @@ need repeated revisions.
     site nav) — they are two independent lists kept in sync by hand, not
     one shared source, so a new page must be added to both.
 - One page = one HTML file (`pagename.html`) in the **root of `web_alpha/`**
-  (alongside `home.html`, the site's home page), not inside `design_website/`.
+  (alongside `index.html`, the site's home page — see the naming-convention
+  note in section 7 on why it's `index.html` and not `home.html`), not
+  inside `design_website/`.
   `design_website/` is exclusively for mockup files (`1. home.png`,
   `2.png`, etc.) and this rules document — it is not an output folder.
 - Final real images (not mockups) are pulled from `img/home_img/` (or a
@@ -174,8 +176,8 @@ need repeated revisions.
 
 ## 3. Design system (reused across all pages *of the current redesign*)
 
-⚠️ **These tokens belong to the redesign iteration that produced
-`home.html` from `design_website/1. home.png`.** They are NOT permanently
+⚠️ **These tokens belong to the redesign iteration that produced the home
+page (`index.html`) from `design_website/1. home.png`.** They are NOT permanently
 fixed — if a future batch of mockups (a new redesign pass) uses a different
 palette, re-sample it per the Section 1 color rule and update this table
 rather than assuming it still applies. This already happened once: the
@@ -321,7 +323,7 @@ works everywhere just because the role (italic accent word) is the same.
    - *Edge-bleed pattern* (seen on the pre-redesign site): image side
      bleeds to the screen edge (gutter ±0–4%), text side has a small
      gutter (±6–8%) only on its outer edge, not both sides.
-   - *Contained/padded pattern* (seen on `home.html`'s redesign mockup):
+   - *Contained/padded pattern* (seen on `index.html`'s redesign mockup):
      both the image and text columns sit inside one shared padded
      container (e.g. `px-6 md:px-14 lg:px-20`) with a visible gutter on
      both outer edges and a generous gap between columns — the image does
@@ -423,10 +425,15 @@ works everywhere just because the role (italic accent word) is the same.
 ## 7. Naming conventions
 
 - Output HTML file: a short, descriptive name matching the page's content
-  (e.g. `home.html` for home, `about.html`, `collection.html`, etc.) — not
-  based on the raw image filename (`2.png` → determine the page name from
-  its content, not "2.html"). `home.html` is this site's home page (not
-  `index.html`) — keep `js/navbar.js`'s `NAV_LINKS` and every page's own
-  "Home" links pointed at `home.html`.
+  (e.g. `about.html`, `collection.html`, etc.) — not based on the raw image
+  filename (`2.png` → determine the page name from its content, not
+  "2.html"). The one exception is the home page: it is named `index.html`
+  (not `home.html`) so Apache serves it automatically at the site root
+  (`https://www.anggaratreasures.com/`), matching the canonical URL already
+  used in every page's `<link rel="canonical">`, `sitemap.xml`, and
+  `llms.txt`. This was originally built as `home.html` and renamed once the
+  mismatch with those root-URL references was noticed — keep
+  `js/navbar.js`'s and `js/footer.js`'s `NAV_LINKS` and every "Home" link
+  pointed at `index.html`, not `home.html`.
 - Final real images: store them in `img/<page-name>_img/` following the
   existing `img/home_img/` pattern, with `755`/`644` permissions.
